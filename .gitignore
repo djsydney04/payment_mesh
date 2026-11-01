@@ -1,0 +1,12 @@
+/target/
+/ios/build/
+/ios/Frameworks/
+/.env
+*.sqlite*
+*.db*
+.DS_Store
+xcuserdata/
+*.xcuserstate
+*.key
+/.local/
+

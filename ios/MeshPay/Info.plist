@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleDisplayName</key><string>Mesh</string>
+<key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
+<key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+<key>CFBundleName</key><string>$(PRODUCT_NAME)</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleShortVersionString</key><string>0.1.0</string>
+<key>CFBundleVersion</key><string>1</string>
+<key>LSRequiresIPhoneOS</key><true/>
+<key>UILaunchScreen</key><dict><key>UIColorName</key><string>LaunchBackground</string></dict>
+<key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string></array>
+<key>NSBluetoothAlwaysUsageDescription</key><string>Mesh uses Bluetooth to find nearby friends and deliver encrypted payments.</string>
+<key>NSLocalNetworkUsageDescription</key><string>Connect to your Mesh sandbox server on your local network.</string>
+<key>NSFaceIDUsageDescription</key><string>Confirm it's you before sending a payment or cashing out.</string>
+<key>UIBackgroundModes</key><array><string>bluetooth-central</string><string>bluetooth-peripheral</string></array>
+<key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
+<key>ITSAppUsesNonExemptEncryption</key><true/>
+</dict></plist>
