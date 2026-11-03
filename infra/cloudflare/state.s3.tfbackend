@@ -1,0 +1,10 @@
+bucket                      = "djsydney04-github-tfstate"
+key                         = "payment-mesh/cloudflare/terraform.tfstate"
+region                      = "auto"
+endpoints                   = { s3 = "https://5e14675da5483007be95a181da33f02b.r2.cloudflarestorage.com" }
+use_lockfile                = true
+skip_credentials_validation = true
+skip_region_validation      = true
+skip_requesting_account_id  = true
+skip_metadata_api_check     = true
+skip_s3_checksum            = true

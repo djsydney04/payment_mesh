@@ -63,11 +63,31 @@ cargo run -p mesh-banking --bin mesh-bank -- events .local/banking.sqlite 0
 
 For webhook testing, start the server with the same `MESH_BANK_OUTBOX` file and a 16–1024-byte `DWOLLA_WEBHOOK_SECRET`. Create a Sandbox webhook subscription with that same secret and a valid public HTTPS URL ending in `/v1/webhooks/dwolla`. The application does not automatically subscribe an external endpoint. Polling remains available while a public URL is not configured.
 
+## Configuration preflight
+
+Create separate [Plaid Sandbox](https://dashboard.plaid.com/) and [Dwolla Sandbox](https://accounts-sandbox.dwolla.com/) applications. Cloudflare can provide the public HTTPS hostname and host the Apple association file; it does not replace either banking provider account. In Plaid, configure Auth, the Dwolla processor integration, and the exact HTTPS redirect URI used by the app. Complete the associated-domain setup in [BANKING.md](BANKING.md). Keep API secrets on the server, never in the iOS build or repository.
+
+Export the settings from `.env.example` into the server process using your local secret manager or environment. The server does **not** read `.env` files automatically. Set `MESH_RAIL=dwolla_sandbox` and an explicit `MESH_DATABASE` path for a fresh wallet database, plus all five Plaid/Dwolla credential and redirect settings.
+
+```sh
+cargo run -p mesh-server -- --check-banking
+```
+
+This local preflight reports missing variable names, rejects non-Sandbox modes and invalid provider configuration, and validates optional webhook wiring. It makes no external requests and never opens or creates a database or vault key. It cannot determine whether a database already belongs to the demo rail, whether a redirect is registered with Plaid, or whether the phone's Universal Link works. Normal server startup still validates the stored rail.
+
+Once configured, explicitly check external Sandbox access:
+
+```sh
+cargo run -p mesh-server -- --probe-banking
+```
+
+The probe authenticates with Dwolla and asks Plaid for an Auth Link token using a synthetic readiness user. The token is discarded without being printed. It creates no customers, linked bank accounts, or transfers. Authentication and Link token creation do not establish Dwolla Balance eligibility or prove the processor exchange and payment journey; complete the app flow below. A failed command exits nonzero and leaves the wallet database untouched.
+
 ## App Sandbox setup
 
 1. Create Dwolla Balance and Plaid Sandbox accounts. Enable Plaid Auth and its Dwolla processor integration for your Sandbox application. Configure the native Plaid redirect/associated-domain setup in [BANKING.md](BANKING.md).
 2. Set `MESH_RAIL=dwolla_sandbox`, `MESH_DATABASE=.local/dwolla-wallet.sqlite`, `DWOLLA_KEY`, `DWOLLA_SECRET`, `PLAID_CLIENT_ID`, `PLAID_SECRET` and `PLAID_REDIRECT_URI` in the server environment. Use a fresh database. The server refuses to reopen an existing database under a different rail.
-3. Run `cargo run -p mesh-server`. The bank transfer outbox uses the wallet database, so a reservation and its provider instruction commit atomically. Do not enqueue administrative runner operations into this database.
+3. Run the configuration preflight and optional Sandbox probe above, then run `cargo run -p mesh-server`. The bank transfer outbox uses the wallet database, so a reservation and its provider instruction commit atomically. Do not enqueue administrative runner operations into this database.
 4. Open the app, connect to this server, and open Bank. Choose **Create my test wallet**. It submits a synthetic test identity rather than collecting real identity data. Customer creation is durable, uses a stable idempotency key, and deletes the encrypted identity payload after recording the provider customer ID. Verification/document exceptions enter review; no spending is allowed until verified.
 5. Connect a test checking/savings account with Plaid. The server verifies the selected account, creates a processor token, then durably creates a Dwolla secure exchange and bank funding source. It verifies that the bank belongs to this customer and is verified. The processor token is encrypted while needed and discarded after the exchange is recorded. The provider path retains the Plaid access token encrypted only until the processor token is recorded, then discards it. The client intent is committed before token exchange, and each setup stage resumes after restart. Expired sign-ins offer a fresh Link session before any Dwolla resource exists; see [interruption behavior](BANKING.md#interrupted-bank-setup).
 6. Choose **Add money**, enter an amount, and confirm the one-time test bank debit. The app saves the transfer UUID before the request. Available balance stays unchanged while the deposit is pending. Use Dwolla's supported Sandbox processing controls to advance bank transfers.

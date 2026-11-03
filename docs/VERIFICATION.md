@@ -39,3 +39,14 @@ Documentation and source comments were expanded without changing runtime logic. 
 - The public C header's syntax and the documented read-only SQL queries against the repository schemas.
 
 The native application, physical radios, and external provider accounts were not retested for this documentation-only pass. The implementation evidence above retains its original date and scope. Start reading at the [documentation index](README.md).
+
+## Integration setup validation — November 2, 2026
+
+- `scripts/check.sh` passed Rust formatting, Clippy, and workspace tests, including the new provider-name and configuration-readiness checks.
+- All four `scripts/test-configure-banking.py` tests passed. They exercise exact OAuth redirect/AASA matching, invalid input rejection, preservation of existing configuration, and device versus simulator build arguments. This command now runs in `scripts/check.sh` and its existing CI job.
+- `scripts/ios.sh` built the simulator app successfully.
+- `scripts/demo.sh` passed the local two-wallet demo.
+- Xcode build-settings inspection confirmed that local team, bundle identifier, and entitlement overrides resolve correctly, including an entitlement path containing spaces.
+- Cloudflare OAuth hosting passed OpenTofu backend-disabled initialization, configuration validation, and formatting checks; Worker request tests passed using Node's standard Request/Response APIs. No deployment plan was applied.
+
+Provider responses in automated tests remain local fixtures. No external Plaid/Dwolla credentials, physical-device OAuth acceptance, Apple provisioning, or deployment were exercised in this validation pass.

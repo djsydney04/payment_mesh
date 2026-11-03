@@ -178,14 +178,20 @@ impl Plaid {
                 )
             })?;
         credentials["account_id"] = json!(account_id);
+        // Dwolla funding-source names are limited to 50 characters.
+        let label: String = account["name"]
+            .as_str()
+            .unwrap_or_default()
+            .chars()
+            .filter(|c| !c.is_control())
+            .take(50)
+            .collect();
         Ok(LinkedBank {
-            label: account["name"]
-                .as_str()
-                .unwrap_or("Linked bank")
-                .chars()
-                .filter(|c| !c.is_control())
-                .take(80)
-                .collect(),
+            label: if label.trim().is_empty() {
+                "Linked bank".into()
+            } else {
+                label
+            },
             mask: account["mask"]
                 .as_str()
                 .unwrap_or("••••")
@@ -341,6 +347,23 @@ pub(crate) mod test_support {
 mod tests {
     use super::*;
     use test_support::mock;
+    #[tokio::test]
+    async fn bank_names_fit_the_dwolla_contract_even_when_plaid_names_do_not() {
+        let mock = mock().await;
+        for (name, expected) in [
+            (format!("{}extra", "é".repeat(50)), "é".repeat(50)),
+            (String::new(), "Linked bank".into()),
+            ("\n\t".into(), "Linked bank".into()),
+        ] {
+            mock.reply(StatusCode::OK, json!({"accounts":[{"account_id":"selected","type":"depository","subtype":"checking","name":name,"mask":"1234"}]}));
+            let bank = mock
+                .client
+                .account("{\"access_token\":\"access-sandbox-private\"}", "selected")
+                .await
+                .unwrap();
+            assert_eq!(bank.label, expected);
+        }
+    }
     #[tokio::test]
     async fn token_account_and_processor_requests_use_exact_selected_account() {
         let mock = mock().await;

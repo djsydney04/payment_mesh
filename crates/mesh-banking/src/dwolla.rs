@@ -355,7 +355,7 @@ impl Dwolla {
     ) -> Result<Uuid> {
         if !["checking", "savings"].contains(&subtype)
             || label.is_empty()
-            || label.chars().count() > 80
+            || label.chars().count() > 50
             || label.chars().any(char::is_control)
         {
             return Err(Error::Invalid("Invalid bank account"));
@@ -896,7 +896,7 @@ mod tests {
         );
         assert_eq!(
             mock.client
-                .create_bank(customer, exchange, "Checking", "checking", bank_key)
+                .create_bank(customer, exchange, &"é".repeat(50), "checking", bank_key)
                 .await
                 .unwrap(),
             bank
@@ -912,6 +912,7 @@ mod tests {
         );
         let body: Value = serde_json::from_slice(&script.requests[3].body).unwrap();
         assert_eq!(body["bankAccountType"], "checking");
+        assert_eq!(body["name"], "é".repeat(50));
     }
     #[tokio::test]
     async fn bank_binding_requires_verified_membership_and_balance_can_be_negative() {
@@ -937,6 +938,23 @@ mod tests {
             mock.script.lock().await.requests[1].path,
             format!("/customers/{customer}/funding-sources?removed=false")
         );
+    }
+    #[tokio::test]
+    async fn oversized_bank_names_are_rejected_before_contacting_dwolla() {
+        let mock = mock().await;
+        assert!(matches!(
+            mock.client
+                .create_bank(
+                    Uuid::new_v4(),
+                    Uuid::new_v4(),
+                    &"a".repeat(51),
+                    "checking",
+                    Uuid::new_v4()
+                )
+                .await,
+            Err(Error::Invalid(_))
+        ));
+        assert!(mock.script.lock().await.requests.is_empty());
     }
     #[test]
     fn pii_and_tokens_do_not_appear_in_provider_errors() {
