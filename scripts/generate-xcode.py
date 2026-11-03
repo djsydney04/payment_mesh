@@ -54,22 +54,22 @@ linkkit_build = add('linkkitbuild', f'isa = PBXBuildFile; fileRef = {linkkit};')
 linkkit_embed = add('linkkitembed', f'isa = PBXBuildFile; fileRef = {linkkit}; settings = {{ ATTRIBUTES = (CodeSignOnCopy,RemoveHeadersOnCopy,); }};')
 linkkit_embed_phase = add('embedframeworks', f'isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 10; files = ({linkkit_embed},); name = "Embed Frameworks"; runOnlyForDeploymentPostprocessing = 0;')
 app_config = configs('app', {
-    'PRODUCT_BUNDLE_IDENTIFIER': 'app.mesh.sandbox', 'PRODUCT_NAME': 'MeshPay', 'SWIFT_VERSION': '5.0',
+    'PRODUCT_BUNDLE_IDENTIFIER': '$(MESH_APP_BUNDLE_ID)', 'PRODUCT_NAME': 'MeshPay', 'SWIFT_VERSION': '5.0',
     'IPHONEOS_DEPLOYMENT_TARGET': '17.0', 'SDKROOT': 'iphoneos', 'ARCHS': 'arm64', 'TARGETED_DEVICE_FAMILY': '1',
     'SUPPORTED_PLATFORMS': 'iphoneos iphonesimulator', 'SWIFT_OBJC_BRIDGING_HEADER': 'MeshPay/MeshCore.h',
-    'INFOPLIST_FILE': 'MeshPay/Info.plist', 'CODE_SIGN_ENTITLEMENTS': 'MeshPay/MeshPay.entitlements',
+    'INFOPLIST_FILE': 'MeshPay/Info.plist', 'CODE_SIGN_ENTITLEMENTS': '$(MESH_ENTITLEMENTS)',
     'CODE_SIGN_STYLE': 'Automatic', 'ENABLE_USER_SCRIPT_SANDBOXING': 'NO',
     'LD_RUNPATH_SEARCH_PATHS': '$(inherited) @executable_path/Frameworks',
     'OTHER_LDFLAGS': '$(inherited) -lc++ -liconv -lresolv -framework Security -framework SystemConfiguration',
     'ASSETCATALOG_COMPILER_APPICON_NAME': 'AppIcon',
 })
 test_config = configs('uitests', {
-    'PRODUCT_BUNDLE_IDENTIFIER': 'app.mesh.sandbox.uitests', 'PRODUCT_NAME': 'MeshPayTests', 'SWIFT_VERSION': '5.0',
+    'PRODUCT_BUNDLE_IDENTIFIER': '$(MESH_APP_BUNDLE_ID).uitests', 'PRODUCT_NAME': 'MeshPayTests', 'SWIFT_VERSION': '5.0',
     'IPHONEOS_DEPLOYMENT_TARGET': '17.0', 'SDKROOT': 'iphoneos', 'ARCHS': 'arm64', 'TARGETED_DEVICE_FAMILY': '1',
     'SUPPORTED_PLATFORMS': 'iphoneos iphonesimulator', 'GENERATE_INFOPLIST_FILE': 'YES', 'TEST_TARGET_NAME': 'MeshPay',
     'CODE_SIGN_STYLE': 'Automatic',
 })
-project_config = configs('project', {'CLANG_ENABLE_MODULES': 'YES', 'SWIFT_VERSION': '5.0', 'IPHONEOS_DEPLOYMENT_TARGET': '17.0'})
+project_config = configs('project', {'MESH_APP_BUNDLE_ID': 'app.mesh.sandbox', 'MESH_ENTITLEMENTS': 'MeshPay/MeshPay.entitlements', 'CLANG_ENABLE_MODULES': 'YES', 'SWIFT_VERSION': '5.0', 'IPHONEOS_DEPLOYMENT_TARGET': '17.0'})
 
 def phase(name, kind, files):
     listed = ','.join(files) + (',' if files else '')

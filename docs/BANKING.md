@@ -19,17 +19,33 @@ Pass a fresh intent `id` UUID, the `public_token`, and the selected account ID b
 
 ## OAuth return configuration
 
-Set `com.apple.developer.associated-domains` in `ios/MeshPay/MeshPay.entitlements` to `applinks:YOUR-DOMAIN`. Serve `https://YOUR-DOMAIN/.well-known/apple-app-site-association` over HTTPS with no redirect:
+The planned Terraform-managed Cloudflare Worker uses `https://payment-mesh.dylanmitic.workers.dev/plaid/`. This URL is prospective until the infrastructure is applied and its HTTPS/AASA responses are verified; no custom domain is needed. Generate a local configuration using that return URL and your Apple signing team:
 
-```json
-{
-  "applinks": {
-    "details": [{
-      "appIDs": ["YOUR_TEAM_ID.app.mesh.sandbox"],
-      "components": [{"/": "/plaid/*"}]
-    }]
-  }
-}
+```sh
+python3 scripts/configure-banking.py \
+  --redirect-uri https://payment-mesh.dylanmitic.workers.dev/plaid/ \
+  --team-id YOUR_TEAM_ID
+```
+
+Replace the team placeholder; the team ID must be ten uppercase letters/digits. The default bundle ID is `app.mesh.sandbox`; use `--bundle-id` if your registered app uses another identifier. Use a plain URL path without query, fragment, wildcards or a custom port. The generated AASA matches that **exact path**, including its trailing slash, and the app identifier `TEAM_ID.BUNDLE_ID`. For an older Apple account whose application identifier prefix differs from its team ID, this helper is not sufficient: configure and verify the identifier with your signing administrator.
+
+The command writes four files to ignored `.local/banking/`: an AASA document, `MeshPay.entitlements`, `ios.xcconfig`, and non-secret `configuration.json`. It never changes checked-in entitlements, uploads anything, or writes credentials. Existing conflicting files are preserved; choose another `--output` directory when changing configuration. Repeat the command with `--check` to verify its existing files without writing.
+
+1. Publish the generated `apple-app-site-association` through the Terraform-managed Worker at `https://payment-mesh.dylanmitic.workers.dev/.well-known/apple-app-site-association`, with HTTPS, JSON content type and **no redirect**. The host need not be your bank API server. Supply the absolute path to `.local/banking/apple-app-site-association` to the Terraform AASA file input. Publish the AASA file only.
+2. Register the **same complete redirect URI** in the Plaid Dashboard and set server `PLAID_REDIRECT_URI` to that value.
+3. Enable Associated Domains for the app in your Apple developer account. Set up its signing certificate and provisioning profile in Xcode. The build command does not create or update Apple account resources automatically.
+4. Build for your connected device with the local signing configuration:
+
+```sh
+MESH_IOS_DESTINATION='platform=iOS,id=YOUR-DEVICE-ID' ./scripts/ios.sh
+```
+
+Device builds use `.local/banking/ios.xcconfig` by default; set `MESH_IOS_CONFIG` to an absolute config path when using another output directory. Simulator builds retain their existing ad-hoc signing defaults. To build in Xcode's UI, apply the generated configuration as a local build configuration or pass its settings to your build; simply opening the project does not load it. Never commit a local signing configuration or credentials.
+
+Check the generator and build argument contracts without provider calls:
+
+```sh
+python3 scripts/test-configure-banking.py
 ```
 
 The app retains one SDK session while the Link sheet is open. Normal bank-app returns are handled by LinkKit; the iOS SDK does not require manual reinitialization. LinkKit 7 cannot restore an in-progress session after the app process terminates. The app records that sign-in was interrupted, opens Bank on relaunch, and offers a fresh session rather than trying to restore an old SDK object. See [Plaid's OAuth guide](https://plaid.com/docs/link/oauth/) and [LinkKit 7 termination behavior](https://github.com/plaid/plaid-link-ios/blob/master/v7-migration-guide.md#resume-after-termination).

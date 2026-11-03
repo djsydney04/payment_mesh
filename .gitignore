@@ -10,3 +10,13 @@ xcuserdata/
 *.key
 /.local/
 
+
+# Terraform/OpenTofu local state, credentials, and saved plans.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log

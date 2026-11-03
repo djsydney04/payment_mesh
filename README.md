@@ -72,6 +72,8 @@ Plaid's Transfer product explicitly does not support peer-to-peer transfers. Thi
 
 Use a fresh database and set `MESH_RAIL=dwolla_sandbox`, `MESH_DATABASE`, and the Plaid/Dwolla Sandbox settings in `.env.example`. In Bank, create a synthetic test wallet, connect a Plaid test bank, then choose Add money. Deposits become spendable after Dwolla confirms processing. Nearby payments and cash outs reserve funds while awaiting the provider. [Detailed setup](docs/BANK_PROVIDER.md).
 
+After exporting your settings, run `cargo run -p mesh-server -- --check-banking` to find configuration gaps without creating a database or contacting providers. Then run `cargo run -p mesh-server -- --probe-banking` to verify Dwolla authentication and Plaid Auth Link token creation with your Sandbox accounts. The probe does not move funds; the full app flow still needs external acceptance testing.
+
 Demo funds cannot be converted to provider-backed balances. A database is permanently pinned to its payment rail. This prevents the test-money faucet from ever funding bank transfers. External Sandbox calls still require validation with your own accounts.
 
 ## Layout

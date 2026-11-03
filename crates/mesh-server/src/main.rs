@@ -1,3 +1,5 @@
+mod readiness;
+
 use mesh_banking::{dwolla::Dwolla, outbox::Outbox};
 use mesh_server::{
     bank_webhooks::BankWebhooks, plaid::Plaid, provider::Rail, store::Store, AppState,
@@ -5,7 +7,22 @@ use mesh_server::{
 use std::{fs::OpenOptions, io::Write, os::unix::fs::OpenOptionsExt, time::Duration};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::process::ExitCode {
+    match run().await {
+        Ok(()) => std::process::ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("{error}");
+            std::process::ExitCode::FAILURE
+        }
+    }
+}
+
+async fn run() -> Result<(), Box<dyn std::error::Error>> {
+    match readiness::Command::parse(std::env::args().skip(1))? {
+        readiness::Command::Serve => {}
+        readiness::Command::CheckBanking => return readiness::run(false).await,
+        readiness::Command::ProbeBanking => return readiness::run(true).await,
+    }
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
